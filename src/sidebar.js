@@ -1,4 +1,5 @@
 import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
+import { formatForPaste } from "./richFormat.js";
 import {
   diffWords,
   groupChanges,
@@ -21,6 +22,7 @@ const originalText = document.getElementById("original-text");
 const humanizedText = document.getElementById("humanized-text");
 const openSettings = document.getElementById("open-settings");
 const pasteInput = document.getElementById("paste-input");
+const plainTextBtn = document.getElementById("plain-text-btn");
 
 let currentEntry = null;
 let lastTimestamp = null;
@@ -61,11 +63,32 @@ async function copyToClipboard(text) {
   }
 }
 
+async function copyForPaste(plain, html) {
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+        "text/html": new Blob([html], { type: "text/html" }),
+      }),
+    ]);
+    return true;
+  } catch {
+    return copyToClipboard(plain);
+  }
+}
+
 function resetRevertsIfNewCopy(entry) {
   if (entry?.timestamp !== lastTimestamp) {
     revertedChanges = new Set();
     lastTimestamp = entry?.timestamp ?? null;
   }
+}
+
+function getHumanizedBaseText(entry) {
+  const { original, humanized } = entry;
+  const baseSegments = diffWords(original, humanized);
+  const changeGroups = groupChanges(baseSegments);
+  return buildDisplayText(baseSegments, changeGroups, revertedChanges);
 }
 
 function renderCopy(entry) {
@@ -85,17 +108,14 @@ function renderCopy(entry) {
   const { original, humanized, timestamp, copied } = entry;
   const baseSegments = diffWords(original, humanized);
   const changeGroups = groupChanges(baseSegments);
-  const displayText = buildDisplayText(
-    baseSegments,
-    changeGroups,
-    revertedChanges
-  );
+  const displayText = getHumanizedBaseText(entry);
   const remainingChanges = countWordChanges(changeGroups, revertedChanges);
   const changed = hasChanges(original, humanized);
 
   copyTime.textContent = formatTime(timestamp);
   originalText.textContent = original;
   humanizedText.textContent = displayText;
+  plainTextBtn.disabled = !displayText.trim();
 
   if (!changed) {
     changeStats.textContent = "No changes — text was already clean.";
@@ -167,17 +187,23 @@ async function toggleChange(changeId) {
     revertedChanges.add(parsedId);
   }
 
-  const { original, humanized } = currentEntry;
-  const baseSegments = diffWords(original, humanized);
-  const changeGroups = groupChanges(baseSegments);
-  const displayText = buildDisplayText(
-    baseSegments,
-    changeGroups,
-    revertedChanges
-  );
+  const displayText = getHumanizedBaseText(currentEntry);
 
   renderCopy({ ...currentEntry, copied: true });
   await copyToClipboard(displayText);
+}
+
+async function copyPlainText() {
+  if (!currentEntry) return;
+
+  const base = getHumanizedBaseText(currentEntry);
+  if (!base.trim()) return;
+
+  const { plain, html } = formatForPaste(base);
+  const copied = await copyForPaste(plain, html);
+  clipboardStatus.textContent = copied
+    ? "Copied for Twitter"
+    : "Copy failed";
 }
 
 function loadLatestCopy() {
@@ -207,6 +233,10 @@ diffView.addEventListener("click", (event) => {
   const button = event.target.closest(".diff-change");
   if (!button) return;
   toggleChange(button.dataset.changeId);
+});
+
+plainTextBtn.addEventListener("click", () => {
+  copyPlainText();
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {

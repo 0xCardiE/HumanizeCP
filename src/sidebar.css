@@ -196,6 +196,40 @@ h1 {
   letter-spacing: 0.04em;
 }
 
+.panel-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel-block-header h2 {
+  margin: 0;
+}
+
+.plain-text-btn {
+  flex-shrink: 0;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.plain-text-btn:hover {
+  color: var(--text);
+  border-color: var(--chip-text);
+}
+
+.plain-text-btn:focus-visible {
+  outline: 2px solid var(--chip-text);
+  outline-offset: 1px;
+}
+
 .diff-view,
 .original-text,
 .humanized-text {
