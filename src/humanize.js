@@ -6,6 +6,10 @@ export const DEFAULT_SETTINGS = {
   cliches: true,
   formulaic: true,
   buzzwords: true,
+  transitionFillers: true,
+  hedgePhrases: true,
+  corporateCliches: true,
+  academicFormal: false,
 };
 
 export const RULE_GROUPS = [
@@ -15,7 +19,18 @@ export const RULE_GROUPS = [
   },
   {
     name: "Phrases & tone",
-    rules: ["fillerPhrases", "forcedSass", "cliches", "formulaic", "buzzwords"],
+    rules: [
+      "fillerPhrases",
+      "forcedSass",
+      "cliches",
+      "formulaic",
+      "transitionFillers",
+      "hedgePhrases",
+    ],
+  },
+  {
+    name: "Vocabulary",
+    rules: ["buzzwords", "corporateCliches", "academicFormal"],
   },
 ];
 
@@ -55,6 +70,26 @@ export const RULE_LABELS = {
     name: "AI buzzwords",
     description:
       "Swap overused AI vocabulary: delve, pivotal, testament, showcase, underscore, vibrant, and similar.",
+  },
+  transitionFillers: {
+    name: "Transition fillers",
+    description:
+      'Trim connective fluff like "when it comes to", "in other words", "the reality is", and "let\'s unpack".',
+  },
+  hedgePhrases: {
+    name: "Hedge phrases",
+    description:
+      'Remove cautious openers like "arguably", "generally speaking", and "one might argue that".',
+  },
+  corporateCliches: {
+    name: "Corporate clichés",
+    description:
+      'Swap marketing-speak like "paradigm shift", "game changer", "synergy", and "unlock the power of".',
+  },
+  academicFormal: {
+    name: "Academic formal",
+    description:
+      'Simplify stiff academic phrasing like "our findings suggest" and "this paper presents". Off by default.',
   },
 };
 
@@ -307,6 +342,134 @@ function applyDoublePunctuation(text) {
   return result;
 }
 
+function applyTransitionFillers(text) {
+  const replacements = [
+    [/When it comes to\s+/gi, "For "],
+    [/That being said,?\s*/gi, "But "],
+    [/In other words,?\s*/gi, ""],
+    [/On the other hand,?\s*/gi, "But "],
+    [/(^|[.!?]\s+)Therefore,?\s*/gim, "$1"],
+    [/(^|[.!?]\s+)Consequently,?\s*/gim, "$1"],
+    [/(^|[.!?]\s+)Subsequently,?\s*/gim, "$1"],
+    [/(^|[.!?]\s+)Nonetheless,?\s*/gim, "$1"],
+    [/The reality is,?\s*/gi, ""],
+    [/A key takeaway is,?\s*/gi, ""],
+    [/From a broader perspective,?\s*/gi, ""],
+    [/In a world where\s+/gi, ""],
+    [/In today's world,?\s*/gi, ""],
+    [/Have you ever wondered(?: if| whether| why| how| what)?\s*/gi, ""],
+    [/Let's unpack[.:]?\s*/gi, ""],
+    [/Let us unpack[.:]?\s*/gi, ""],
+  ];
+  let result = text;
+  for (const [pattern, replacement] of replacements) {
+    result = replaceAll(result, pattern, replacement);
+  }
+  return result;
+}
+
+function applyHedgePhrases(text) {
+  const replacements = [
+    [/Generally speaking,?\s*/gi, ""],
+    [/Broadly speaking,?\s*/gi, ""],
+    [/To some extent,?\s*/gi, ""],
+    [/Arguably,?\s*/gi, ""],
+    [/One might argue that\s*/gi, ""],
+    [/It could be suggested that\s*/gi, ""],
+    [/It should be mentioned that\s*/gi, ""],
+    [/(^|[.!?]\s+)Indeed,?\s*/gim, "$1"],
+  ];
+  let result = text;
+  for (const [pattern, replacement] of replacements) {
+    result = replaceAll(result, pattern, replacement);
+  }
+  return result;
+}
+
+function applyCorporateCliches(text) {
+  const phraseMap = [
+    [/\brevolutioniz(?:e|es|ed|ing)\s+the\s+way\b/gi, "change how"],
+    [/\btransformative\s+(?:power|effect|impact)\b/gi, "major impact"],
+    [/\bseamless\s+integration\b/gi, "smooth setup"],
+    [/\bscalable\s+solution\b/gi, "system that can grow"],
+    [/\bbest-in-class\b/gi, "top quality"],
+    [/\bunparalleled\s+excellence\b/gi, "high quality"],
+    [/\bparadigm\s+shift\b/gi, "big change"],
+    [/\bgame[\s-]changer\b/gi, "major shift"],
+    [/\bgame[\s-]changing\b/gi, "major"],
+    [/\bmove\s+the\s+needle\b/gi, "make progress"],
+    [/\bspeaks\s+volumes\b/gi, "says a lot"],
+    [/\bpaving\s+the\s+way\s+for\b/gi, "leading to"],
+    [/\bcannot\s+be\s+overstated\b/gi, "is significant"],
+    [/\bcan(?:not|'t)\s+be\s+overstated\b/gi, "is significant"],
+    [/\bunlock\s+the\s+power\s+of\b/gi, "use"],
+    [/\bdouble\s+down\s+on\b/gi, "focus on"],
+    [/\bshed\s+light\s+on\b/gi, "explain"],
+    [/\bembark\s+on\b/gi, "start"],
+    [/\bgrapple\s+with\b/gi, "deal with"],
+    [/\bplays\s+a\s+(?:crucial|vital|significant)\s+role\b/gi, "matters"],
+    [/\bthought[\s-]provoking\b/gi, "interesting"],
+    [/\bcutting[\s-]edge\b/gi, "latest"],
+  ];
+
+  const wordMap = [
+    [/\bsynerg(?:y|ies)\b/gi, (m) => (m.toLowerCase().endsWith("ies") ? "teamwork" : "teamwork")],
+    [/\bthought[\s-]lead(?:er|ers|ership)\b/gi, (m) =>
+      m.toLowerCase().includes("ship") ? "expertise" : m.toLowerCase().endsWith("s") ? "experts" : "expert"],
+    [/\brealm\b/gi, "area"],
+    [/\brealms\b/gi, "areas"],
+    [/\bharness(?:es|ed|ing)?\b/gi, (m) =>
+      m.toLowerCase().endsWith("ing") ? "using" : m.toLowerCase().endsWith("ed") ? "used" : m.toLowerCase().endsWith("es") ? "uses" : "use"],
+    [/\billuminat(?:e|es|ed|ing)\b/gi, (m) =>
+      m.toLowerCase().includes("ing") ? "explaining" : m.toLowerCase().endsWith("s") ? "explains" : m.toLowerCase().endsWith("ed") ? "explained" : "explain"],
+    [/\bfacilitat(?:e|es|ed|ing)\b/gi, (m) =>
+      m.toLowerCase().includes("ing") ? "helping" : m.toLowerCase().endsWith("s") ? "helps" : m.toLowerCase().endsWith("ed") ? "helped" : "help"],
+    [/\bstreamlin(?:e|es|ed|ing)\b/gi, (m) =>
+      m.toLowerCase().includes("ing") ? "simplifying" : m.toLowerCase().endsWith("s") ? "simplifies" : m.toLowerCase().endsWith("ed") ? "simplified" : "simplify"],
+    [/\bdifferentiat(?:e|es|ed|ing)\b/gi, (m) =>
+      m.toLowerCase().includes("ing") ? "distinguishing" : m.toLowerCase().endsWith("s") ? "distinguishes" : m.toLowerCase().endsWith("ed") ? "distinguished" : "distinguish"],
+    [/\bmultifaceted\b/gi, "complex"],
+    [/\bunwavering\b/gi, "steady"],
+    [/\bunyielding\b/gi, "firm"],
+    [/\bcompelling\b/gi, "strong"],
+    [/\bfundamentally\b/gi, ""],
+    [/\bnuanc(?:e|es|ed)\b/gi, (m) =>
+      m.toLowerCase().endsWith("es") ? "details" : m.toLowerCase().endsWith("ed") ? "subtle" : "detail"],
+    [/\bnuanced\b/gi, "subtle"],
+  ];
+
+  let result = text;
+  for (const [pattern, replacement] of phraseMap) {
+    result = replaceAll(result, pattern, replacement);
+  }
+  for (const [pattern, replacement] of wordMap) {
+    result = replaceAll(result, pattern, replacement);
+  }
+  result = replaceAll(result, /  +/g, " ");
+  return result;
+}
+
+function applyAcademicFormal(text) {
+  const replacements = [
+    [/Our findings suggest(?: that)?\s*/gi, "We found "],
+    [/our findings suggest(?: that)?\s*/gi, "we found "],
+    [/This paper presents\s+/gi, "This covers "],
+    [/this paper presents\s+/gi, "this covers "],
+    [/Important implications for\s+/gi, "Effects on "],
+    [/important implications for\s+/gi, "effects on "],
+    [/It remains to be seen(?: whether| if)?\s*/gi, "It's unclear "],
+    [/it remains to be seen(?: whether| if)?\s*/gi, "it's unclear "],
+    [/Further research is needed(?: to)?\s*/gi, "More study is needed "],
+    [/further research is needed(?: to)?\s*/gi, "more study is needed "],
+    [/In this (?:article|guide|blog post),?\s*(?:we will|we'll|I will|I'll)\s*/gi, ""],
+  ];
+  let result = text;
+  for (const [pattern, replacement] of replacements) {
+    result = replaceAll(result, pattern, replacement);
+  }
+  return result;
+}
+
 function trimWhitespace(text) {
   return text
     .split("\n")
@@ -323,7 +486,11 @@ const RULE_APPLIERS = {
   forcedSass: applyForcedSass,
   cliches: applyCliches,
   formulaic: applyFormulaic,
+  transitionFillers: applyTransitionFillers,
+  hedgePhrases: applyHedgePhrases,
   buzzwords: applyBuzzwords,
+  corporateCliches: applyCorporateCliches,
+  academicFormal: applyAcademicFormal,
 };
 
 export function humanize(text, settings = DEFAULT_SETTINGS) {
