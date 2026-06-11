@@ -11,33 +11,31 @@
       <header>
         <h1>Humanize Copy</h1>
         <p>
-          Right-click selected text and choose <strong>Copy &amp; Humanize</strong>
-          to copy with subtle cleanup of common AI writing tells.
+          Right-click selected text and choose <strong>Copy &amp; Humanize</strong>.
         </p>
+        <p id="permission-status"></p>
+        <button id="grant-access" type="button" hidden>Allow on all websites</button>
       </header>
 
-      <section class="preview-section">
+      <section>
         <h2>Preview</h2>
-        <textarea id="preview-input" rows="4" spellcheck="false">Many people believe AI will replace humans completely—but the reality is far more nuanced. But here's the thing: we need to delve into this landscape and leverage the real unlock.</textarea>
-        <button id="preview-btn" type="button">Run preview</button>
+        <textarea id="preview-input" rows="10" spellcheck="false">In today's fast-paced digital landscape, many people believe AI will replace humans completely—but the reality is far more nuanced!! But here's the thing: we need to delve into this landscape and leverage the real unlock.
+
+Hot take: It's not just a tool. It's also a partner. That's the real unlock. No hype. No noise. Just results.
+
+Here's why that matters: teams must navigate the digital landscape, foster a tapestry of ideas, and empower users to utilize robust, seamless workflows. The result?? And honestly? As the world continues to evolve, this shift is crucial.
+
+Simply put, she opened the ancient book—its pages brittle and yellowed—and discovered a map that would change her life forever.</textarea>
         <output id="preview-output" aria-live="polite"></output>
       </section>
 
       <section>
-        <div class="section-header">
-          <h2>Cleanup rules</h2>
-          <div class="bulk-actions">
-            <button id="enable-all" type="button">Enable all</button>
-            <button id="disable-all" type="button">Disable all</button>
-          </div>
-        </div>
+        <h2>Cleanup rules</h2>
         <form id="settings-form">
           <ul id="rules-list"></ul>
         </form>
       </section>
-
-      <p id="status" role="status" aria-live="polite"></p>
     </main>
-    <script src="options.js"></script>
+    <script type="module" src="options.js"></script>
   </body>
 </html>

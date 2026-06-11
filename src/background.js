@@ -1,6 +1,48 @@
 import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
 
 const MENU_ID = "humanize-copy";
+const SITE_ACCESS = { origins: ["<all_urls>"] };
+
+let cachedSettings = { ...DEFAULT_SETTINGS };
+let hasSiteAccess = false;
+
+function refreshSettings() {
+  chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
+    cachedSettings = { ...DEFAULT_SETTINGS, ...stored };
+  });
+}
+
+function refreshSiteAccess() {
+  chrome.permissions.contains(SITE_ACCESS, (granted) => {
+    hasSiteAccess = granted;
+  });
+}
+
+function copyViaPage(tabId, text) {
+  return chrome.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: (value) => {
+      const el = document.createElement("textarea");
+      el.value = value;
+      el.setAttribute("readonly", "");
+      el.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    },
+    args: [text],
+  });
+}
+
+function copyText(tabId, text) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => copyViaPage(tabId, text));
+    return;
+  }
+  copyViaPage(tabId, text);
+}
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -8,50 +50,38 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Copy & Humanize",
     contexts: ["selection"],
   });
-
-  chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
-    chrome.storage.sync.set({ ...DEFAULT_SETTINGS, ...stored });
-  });
+  refreshSettings();
+  refreshSiteAccess();
 });
+
+chrome.runtime.onStartup.addListener(() => {
+  refreshSettings();
+  refreshSiteAccess();
+});
+
+chrome.storage.onChanged.addListener((_, area) => {
+  if (area === "sync") refreshSettings();
+});
+
+chrome.permissions.onAdded.addListener(refreshSiteAccess);
+chrome.permissions.onRemoved.addListener(refreshSiteAccess);
 
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
 
-async function getSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(DEFAULT_SETTINGS, resolve);
-  });
-}
-
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
 
-  const selection = info.selectionText || "";
-  const settings = await getSettings();
-  const cleaned = humanize(selection, settings);
+  const cleaned = humanize(info.selectionText || "", cachedSettings);
 
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    world: "MAIN",
-    func: (text) => {
-      const copy = (value) => {
-        const el = document.createElement("textarea");
-        el.value = value;
-        el.style.position = "fixed";
-        el.style.left = "-9999px";
-        document.body.appendChild(el);
-        el.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(el);
-        return ok;
-      };
+  if (!hasSiteAccess) {
+    chrome.permissions.request(SITE_ACCESS, (granted) => {
+      hasSiteAccess = granted;
+      if (granted) copyText(tab.id, cleaned);
+    });
+    return;
+  }
 
-      if (navigator.clipboard?.writeText) {
-        return navigator.clipboard.writeText(text).catch(() => copy(text));
-      }
-      return copy(text);
-    },
-    args: [cleaned],
-  });
+  copyText(tab.id, cleaned);
 });

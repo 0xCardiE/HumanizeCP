@@ -1,12 +1,25 @@
 export const DEFAULT_SETTINGS = {
   emDashes: true,
+  doublePunctuation: true,
+  fillerPhrases: true,
   forcedSass: true,
-  buzzwords: true,
   cliches: true,
   formulaic: true,
-  fillerPhrases: true,
-  doublePunctuation: true,
+  buzzwords: true,
 };
+
+export const RULE_GROUPS = [
+  {
+    name: "Symbols & punctuation",
+    rules: ["emDashes", "doublePunctuation"],
+  },
+  {
+    name: "Phrases & tone",
+    rules: ["fillerPhrases", "forcedSass", "cliches", "formulaic", "buzzwords"],
+  },
+];
+
+export const RULE_ORDER = RULE_GROUPS.flatMap((group) => group.rules);
 
 export const RULE_LABELS = {
   emDashes: {
@@ -14,15 +27,19 @@ export const RULE_LABELS = {
     description:
       "Replace em dashes (—) with commas. AI often overuses tight em dashes—like this—instead of commas.",
   },
+  doublePunctuation: {
+    name: "Double punctuation",
+    description: "Fix doubled exclamation or question marks (!! → !, ?? → ?).",
+  },
+  fillerPhrases: {
+    name: "Filler phrases",
+    description:
+      'Remove or shorten filler like "Here\'s why that matters", "No fluff", and "The result?".',
+  },
   forcedSass: {
     name: "Forced sass",
     description:
       'Tone down dramatic hooks like "But here\'s the thing:", "Hot take:", and "And honestly?".',
-  },
-  buzzwords: {
-    name: "AI buzzwords",
-    description:
-      "Swap overused words like delve, leverage, unlock, tapestry, and navigate for plainer alternatives.",
   },
   cliches: {
     name: "Cliché openers",
@@ -34,19 +51,22 @@ export const RULE_LABELS = {
     description:
       'Simplify patterns like "It\'s not just X. It\'s also Y." and "That\'s the real unlock."',
   },
-  fillerPhrases: {
-    name: "Filler phrases",
+  buzzwords: {
+    name: "AI buzzwords",
     description:
-      'Remove or shorten filler like "Here\'s why that matters", "No fluff", and "The result?".',
-  },
-  doublePunctuation: {
-    name: "Double punctuation",
-    description: "Fix doubled exclamation or question marks (!! → !, ?? → ?).",
+      "Swap overused phrases like delve into, leverage the real unlock, and navigate the landscape.",
   },
 };
 
 function replaceAll(text, pattern, replacement) {
   return text.replace(pattern, replacement);
+}
+
+function normalizeText(text) {
+  return text
+    .replace(/\u00a0/g, " ")
+    .replace(/[\u200b-\u200d\ufeff]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 function applyEmDashes(text) {
@@ -63,10 +83,18 @@ function applyEmDashes(text) {
   return result;
 }
 
+function fixSentenceCase(text) {
+  return text.replace(/(^|[.!?]\s+)([a-z])/g, (_, boundary, letter) => {
+    return boundary + letter.toUpperCase();
+  });
+}
+
 function applyForcedSass(text) {
   const replacements = [
-    [/But here's the thing:\s*/gi, "But "],
-    [/But here is the thing:\s*/gi, "But "],
+    [/\.\s*But here's the thing:\s*/gi, ". "],
+    [/\.\s*But here is the thing:\s*/gi, ". "],
+    [/But here's the thing:\s*/gi, ""],
+    [/But here is the thing:\s*/gi, ""],
     [/Then I realized:\s*/gi, "I realized "],
     [/Hot take:\s*/gi, ""],
     [/And honestly\?\s*/gi, ""],
@@ -88,14 +116,25 @@ function applyForcedSass(text) {
 }
 
 function applyBuzzwords(text) {
+  const phraseMap = [
+    [/\bleverag(?:e|ing)\s+the\s+real\s+unlock\b/gi, "use what matters"],
+    [/\bthe\s+real\s+unlock\b/gi, "what matters"],
+    [/\breal\s+unlock\b/gi, "key point"],
+    [/\bdelve\s+into\s+this(?:\s+(?:landscape|field))?\b/gi, "look into this"],
+    [/\bdelve\s+into\s+the\s+(?:landscape|field)\b/gi, "look into the area"],
+    [/\bdelve\s+into\b/gi, "look into"],
+    [/\bdelving\s+into\b/gi, "looking into"],
+    [/\bnavigate\s+the\s+(?:landscape|field)\b/gi, "work through the area"],
+    [/\bnavigate\s+this\s+(?:landscape|field)\b/gi, "work through this"],
+    [/\btapestry\s+of\b/gi, "mix of"],
+    [/\bdigital\s+landscape\b/gi, "space"],
+    [/\bthis\s+landscape\b/gi, "this"],
+    [/\bthe\s+landscape\b/gi, "the area"],
+  ];
+
   const wordMap = [
-    [/\bdelve into\b/gi, "look into"],
-    [/\bdelving into\b/gi, "looking into"],
     [/\bdelve\b/gi, "explore"],
-    [/\bleverage\b/gi, "use"],
-    [/\bleveraging\b/gi, "using"],
-    [/\bunlock\b/gi, "open"],
-    [/\bunlocking\b/gi, "opening"],
+    [/\bleverag(?:e|ing)\b/gi, (match) => (match.toLowerCase().endsWith("ing") ? "using" : "use")],
     [/\bempower\b/gi, "enable"],
     [/\bempowering\b/gi, "enabling"],
     [/\belevate\b/gi, "raise"],
@@ -110,18 +149,20 @@ function applyBuzzwords(text) {
     [/\brobust\b/gi, "strong"],
     [/\bseamless\b/gi, "smooth"],
     [/\bcomprehensive\b/gi, "full"],
-    [/\blandscape\b/gi, "field"],
     [/\bgrounded\b/gi, "practical"],
     [/\bquietly\b/gi, ""],
     [/\bsignificant\b/gi, "notable"],
     [/\bcrucial\b/gi, "key"],
     [/\bparamount\b/gi, "main"],
   ];
+
   let result = text;
+  for (const [pattern, replacement] of phraseMap) {
+    result = replaceAll(result, pattern, replacement);
+  }
   for (const [pattern, replacement] of wordMap) {
     result = replaceAll(result, pattern, replacement);
   }
-  // Clean double spaces from removed words
   result = replaceAll(result, /  +/g, " ");
   return result;
 }
@@ -161,8 +202,8 @@ function applyFormulaic(text) {
     /It is not just ([^.]+)\.\s*It is also ([^.]+)\./gi,
     "It is $1 and $2."
   );
-  result = replaceAll(result, /That's the real ([^.!?]+)/gi, "That's the $1");
-  result = replaceAll(result, /That is the real ([^.!?]+)/gi, "That is the $1");
+  result = replaceAll(result, /That's the real unlock\b/gi, "That's what matters");
+  result = replaceAll(result, /That is the real unlock\b/gi, "That is what matters");
   result = replaceAll(result, /No ([^.]+)\.\s*No ([^.]+)\.\s*Just ([^.]+)\./gi, "$3.");
   return result;
 }
@@ -206,22 +247,22 @@ function trimWhitespace(text) {
 
 const RULE_APPLIERS = {
   emDashes: applyEmDashes,
+  doublePunctuation: applyDoublePunctuation,
+  fillerPhrases: applyFillerPhrases,
   forcedSass: applyForcedSass,
-  buzzwords: applyBuzzwords,
   cliches: applyCliches,
   formulaic: applyFormulaic,
-  fillerPhrases: applyFillerPhrases,
-  doublePunctuation: applyDoublePunctuation,
+  buzzwords: applyBuzzwords,
 };
 
 export function humanize(text, settings = DEFAULT_SETTINGS) {
   if (!text) return "";
 
-  let result = text;
-  for (const [key, apply] of Object.entries(RULE_APPLIERS)) {
+  let result = normalizeText(text);
+  for (const key of RULE_ORDER) {
     if (settings[key] !== false) {
-      result = apply(result);
+      result = RULE_APPLIERS[key](result);
     }
   }
-  return trimWhitespace(result);
+  return trimWhitespace(fixSentenceCase(result));
 }

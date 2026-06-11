@@ -1,87 +1,87 @@
-import {
-  humanize,
-  DEFAULT_SETTINGS,
-  RULE_LABELS,
-} from "./humanize.js";
+import { humanize, DEFAULT_SETTINGS, RULE_GROUPS, RULE_LABELS } from "./humanize.js";
 
 const form = document.getElementById("settings-form");
 const rulesList = document.getElementById("rules-list");
-const statusEl = document.getElementById("status");
 const previewInput = document.getElementById("preview-input");
 const previewOutput = document.getElementById("preview-output");
-const previewBtn = document.getElementById("preview-btn");
-const enableAllBtn = document.getElementById("enable-all");
-const disableAllBtn = document.getElementById("disable-all");
+const permissionStatus = document.getElementById("permission-status");
+const grantAccessBtn = document.getElementById("grant-access");
 
-let saveTimer;
-
-function showStatus(message) {
-  statusEl.textContent = message;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    statusEl.textContent = "";
-  }, 2000);
-}
+const SITE_ACCESS = { origins: ["<all_urls>"] };
 
 function readFormSettings() {
   const settings = { ...DEFAULT_SETTINGS };
-  for (const key of Object.keys(RULE_LABELS)) {
-    const input = form.querySelector(`[name="${key}"]`);
-    settings[key] = input ? input.checked : DEFAULT_SETTINGS[key];
+  for (const group of RULE_GROUPS) {
+    for (const key of group.rules) {
+      const input = form.querySelector(`[name="${key}"]`);
+      settings[key] = input ? input.checked : DEFAULT_SETTINGS[key];
+    }
   }
   return settings;
 }
 
 function renderRules(settings) {
   rulesList.innerHTML = "";
-  for (const [key, meta] of Object.entries(RULE_LABELS)) {
-    const li = document.createElement("li");
-    li.className = "rule-item";
-    li.innerHTML = `
-      <label>
-        <input type="checkbox" name="${key}" ${settings[key] ? "checked" : ""} />
-        <span>
-          <span class="rule-name">${meta.name}</span>
-          <span class="rule-desc">${meta.description}</span>
-        </span>
-      </label>
-    `;
-    rulesList.appendChild(li);
+  for (const group of RULE_GROUPS) {
+    const groupEl = document.createElement("li");
+    groupEl.className = "rule-group";
+    groupEl.innerHTML = `<h3 class="rule-group-name">${group.name}</h3>`;
+
+    const items = document.createElement("ul");
+    items.className = "rule-group-list";
+
+    for (const key of group.rules) {
+      const meta = RULE_LABELS[key];
+      const li = document.createElement("li");
+      li.className = "rule-item";
+      li.innerHTML = `
+        <label>
+          <input type="checkbox" name="${key}" ${settings[key] ? "checked" : ""} />
+          <span>
+            <span class="rule-name">${meta.name}</span>
+            <span class="rule-desc">${meta.description}</span>
+          </span>
+        </label>
+      `;
+      items.appendChild(li);
+    }
+
+    groupEl.appendChild(items);
+    rulesList.appendChild(groupEl);
   }
 }
 
 function saveSettings(settings) {
-  chrome.storage.sync.set(settings, () => {
-    showStatus("Settings saved.");
-  });
+  chrome.storage.sync.set(settings);
 }
 
 function runPreview() {
-  const settings = readFormSettings();
-  previewOutput.textContent = humanize(previewInput.value, settings);
+  previewOutput.textContent = humanize(previewInput.value, readFormSettings());
 }
 
-function setAll(enabled) {
-  for (const key of Object.keys(RULE_LABELS)) {
-    const input = form.querySelector(`[name="${key}"]`);
-    if (input) input.checked = enabled;
-  }
-  saveSettings(readFormSettings());
-  runPreview();
+function updatePermissionUI() {
+  chrome.permissions.contains(SITE_ACCESS, (granted) => {
+    grantAccessBtn.hidden = granted;
+    permissionStatus.textContent = granted
+      ? "Works on all websites."
+      : "Allow site access once to use on any page.";
+  });
 }
+
+grantAccessBtn.addEventListener("click", () => {
+  chrome.permissions.request(SITE_ACCESS, updatePermissionUI);
+});
 
 chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
   const settings = { ...DEFAULT_SETTINGS, ...stored };
   renderRules(settings);
   runPreview();
+  updatePermissionUI();
 });
 
 form.addEventListener("change", () => {
-  const settings = readFormSettings();
-  saveSettings(settings);
+  saveSettings(readFormSettings());
   runPreview();
 });
 
-previewBtn.addEventListener("click", runPreview);
-enableAllBtn.addEventListener("click", () => setAll(true));
-disableAllBtn.addEventListener("click", () => setAll(false));
+previewInput.addEventListener("input", runPreview);

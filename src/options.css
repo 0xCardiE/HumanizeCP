@@ -5,7 +5,6 @@
   --text: #1a1a1a;
   --muted: #5c5c5c;
   --border: #ddd6cb;
-  --accent: #2d5a3d;
   --accent-soft: #e8f0ea;
 }
 
@@ -16,7 +15,6 @@
     --text: #f2f2f2;
     --muted: #a8a8a8;
     --border: #333;
-    --accent: #7ec89a;
     --accent-soft: #1e2e24;
   }
 }
@@ -42,11 +40,10 @@ main {
 header h1 {
   margin: 0 0 0.5rem;
   font-size: 1.75rem;
-  font-weight: 600;
 }
 
 header p {
-  margin: 0;
+  margin: 0 0 0.5rem;
   color: var(--muted);
 }
 
@@ -57,19 +54,6 @@ section {
 h2 {
   margin: 0 0 1rem;
   font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.section-header h2 {
-  margin: 0;
 }
 
 textarea,
@@ -86,7 +70,7 @@ output {
 
 textarea {
   resize: vertical;
-  min-height: 6rem;
+  min-height: 10rem;
 }
 
 output {
@@ -97,7 +81,6 @@ output {
 }
 
 button {
-  margin-top: 0.75rem;
   padding: 0.5rem 1rem;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -107,21 +90,28 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  border-color: var(--accent);
-}
-
-.bulk-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.bulk-actions button {
-  margin-top: 0;
-  font-size: 0.85rem;
-}
-
 #rules-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.rule-group {
+  list-style: none;
+}
+
+.rule-group-name {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rule-group-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -145,7 +135,6 @@ button:hover {
 
 .rule-item input {
   margin-top: 0.2rem;
-  flex-shrink: 0;
 }
 
 .rule-name {
@@ -156,12 +145,5 @@ button:hover {
   display: block;
   margin-top: 0.25rem;
   color: var(--muted);
-  font-size: 0.9rem;
-}
-
-#status {
-  margin-top: 1.5rem;
-  min-height: 1.25rem;
-  color: var(--accent);
   font-size: 0.9rem;
 }
