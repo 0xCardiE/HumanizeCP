@@ -18,9 +18,20 @@
       <button type="button" id="open-settings" class="settings-link">Settings</button>
     </header>
 
+    <section class="paste-section">
+      <label for="paste-input" class="paste-label">Paste to clean</label>
+      <p class="paste-hint">Paste text from anywhere — Word, Notion, ChatGPT, etc.</p>
+      <textarea
+        id="paste-input"
+        class="paste-input"
+        rows="4"
+        spellcheck="false"
+        placeholder="Paste text here…"
+      ></textarea>
+    </section>
+
     <section id="empty-state" class="empty-state">
-      <p>No humanized copy yet.</p>
-      <p class="hint">Select text on a page, right-click, and choose <strong>Copy &amp; Humanize</strong>.</p>
+      <p class="hint">Or select text on a page and choose <strong>Copy &amp; Humanize</strong>.</p>
     </section>
 
     <section id="copy-panel" class="copy-panel" hidden>

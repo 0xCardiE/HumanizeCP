@@ -88,8 +88,52 @@ h1 {
   cursor: pointer;
 }
 
+.paste-section {
+  padding: 0.75rem 1rem 0;
+}
+
+.paste-label {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.paste-hint {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.paste-input {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.paste-input:focus {
+  outline: 2px solid var(--chip-text);
+  outline-offset: 1px;
+}
+
+.paste-input:focus-visible {
+  outline: 2px solid var(--chip-text);
+  outline-offset: 1px;
+}
+
 .empty-state {
-  padding: 2rem 1rem;
+  padding: 1rem;
   color: var(--muted);
   text-align: center;
 }

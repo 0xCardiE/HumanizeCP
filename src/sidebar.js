@@ -1,3 +1,4 @@
+import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
 import {
   diffWords,
   groupChanges,
@@ -19,10 +20,22 @@ const diffView = document.getElementById("diff-view");
 const originalText = document.getElementById("original-text");
 const humanizedText = document.getElementById("humanized-text");
 const openSettings = document.getElementById("open-settings");
+const pasteInput = document.getElementById("paste-input");
 
 let currentEntry = null;
 let lastTimestamp = null;
 let revertedChanges = new Set();
+let cachedSettings = { ...DEFAULT_SETTINGS };
+let isProcessingPaste = false;
+
+function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
+      cachedSettings = { ...DEFAULT_SETTINGS, ...stored };
+      resolve(cachedSettings);
+    });
+  });
+}
 
 function formatTime(timestamp) {
   return new Intl.DateTimeFormat(undefined, {
@@ -117,6 +130,31 @@ function renderCopy(entry) {
   }
 }
 
+async function processPastedText(text) {
+  const original = text.trim();
+  if (!original || isProcessingPaste) return;
+
+  isProcessingPaste = true;
+  try {
+    const settings = await getSettings();
+    const humanized = humanize(original, settings);
+    const copied = await copyToClipboard(humanized);
+    const entry = {
+      original,
+      humanized,
+      copied,
+      timestamp: Date.now(),
+      source: "paste",
+    };
+
+    pasteInput.value = "";
+    chrome.storage.local.set({ [STORAGE_KEY]: entry });
+    renderCopy(entry);
+  } finally {
+    isProcessingPaste = false;
+  }
+}
+
 async function toggleChange(changeId) {
   if (!currentEntry) return;
 
@@ -152,6 +190,19 @@ openSettings.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
+pasteInput.addEventListener("paste", () => {
+  requestAnimationFrame(() => {
+    processPastedText(pasteInput.value);
+  });
+});
+
+pasteInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    processPastedText(pasteInput.value);
+  }
+});
+
 diffView.addEventListener("click", (event) => {
   const button = event.target.closest(".diff-change");
   if (!button) return;
@@ -159,9 +210,15 @@ diffView.addEventListener("click", (event) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync") {
+    getSettings();
+    return;
+  }
+
   if (area === "local" && changes[STORAGE_KEY]) {
     renderCopy(changes[STORAGE_KEY].newValue);
   }
 });
 
+getSettings();
 loadLatestCopy();
