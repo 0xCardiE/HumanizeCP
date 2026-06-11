@@ -4,6 +4,7 @@ const form = document.getElementById("settings-form");
 const rulesList = document.getElementById("rules-list");
 const previewInput = document.getElementById("preview-input");
 const previewOutput = document.getElementById("preview-output");
+const testingTool = document.querySelector(".testing-tool");
 function readFormSettings() {
   const settings = { ...DEFAULT_SETTINGS };
   for (const group of RULE_GROUPS) {
@@ -77,3 +78,7 @@ previewInput.addEventListener("input", () => {
 });
 
 window.addEventListener("resize", fitPreviewInput);
+
+testingTool?.addEventListener("toggle", () => {
+  if (testingTool.open) fitPreviewInput();
+});

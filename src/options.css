@@ -170,3 +170,55 @@ button {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+.testing-tool {
+  margin-top: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.testing-tool summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.testing-tool summary::-webkit-details-marker {
+  display: none;
+}
+
+.testing-tool summary::before {
+  content: "▸";
+  margin-right: 0.35rem;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.testing-tool[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.testing-tool summary h2 {
+  margin: 0;
+  display: inline;
+  font-size: 1.1rem;
+}
+
+.testing-tool-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.testing-tool-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.testing-tool-body textarea {
+  margin-top: 1rem;
+}
