@@ -78,7 +78,7 @@ function copyText(tab, text) {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: MENU_ID,
-    title: "Copy & Humanize",
+    title: "Copy && Humanize",
     contexts: ["selection"],
   });
   refreshSettings();

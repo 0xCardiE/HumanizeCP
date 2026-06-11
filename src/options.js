@@ -54,10 +54,16 @@ function runPreview() {
   previewOutput.textContent = humanize(previewInput.value, readFormSettings());
 }
 
+function fitPreviewInput() {
+  previewInput.style.height = "auto";
+  previewInput.style.height = `${previewInput.scrollHeight}px`;
+}
+
 chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
   const settings = { ...DEFAULT_SETTINGS, ...stored };
   renderRules(settings);
   runPreview();
+  fitPreviewInput();
 });
 
 form.addEventListener("change", () => {
@@ -65,4 +71,9 @@ form.addEventListener("change", () => {
   runPreview();
 });
 
-previewInput.addEventListener("input", runPreview);
+previewInput.addEventListener("input", () => {
+  fitPreviewInput();
+  runPreview();
+});
+
+window.addEventListener("resize", fitPreviewInput);
