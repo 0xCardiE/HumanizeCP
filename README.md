@@ -34,3 +34,7 @@ npm run watch
 Select text → right-click → **Copy & Humanize** → paste.
 
 Click the extension icon to toggle cleanup rules.
+
+## Privacy
+
+[Privacy Policy](PRIVACY.md)
