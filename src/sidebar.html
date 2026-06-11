@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Humanize Copy/Paste</title>
+    <link rel="stylesheet" href="sidebar.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="" width="32" height="32" class="brand-logo" />
+        <div>
+          <h1>Latest copy</h1>
+          <p class="subtitle">Changes from your original selection</p>
+        </div>
+      </div>
+      <button type="button" id="open-settings" class="settings-link">Settings</button>
+    </header>
+
+    <section id="empty-state" class="empty-state">
+      <p>No humanized copy yet.</p>
+      <p class="hint">Select text on a page, right-click, and choose <strong>Copy &amp; Humanize</strong>.</p>
+    </section>
+
+    <section id="copy-panel" class="copy-panel" hidden>
+      <div class="status-bar">
+        <span id="clipboard-status" class="status-chip">On clipboard</span>
+        <time id="copy-time" class="copy-time"></time>
+      </div>
+
+      <p id="change-stats" class="change-stats"></p>
+
+      <div class="panel-block">
+        <h2>Changes</h2>
+        <div id="diff-view" class="diff-view" aria-live="polite"></div>
+      </div>
+
+      <details class="panel-block original-block">
+        <summary>Original text</summary>
+        <pre id="original-text" class="original-text"></pre>
+      </details>
+
+      <div class="panel-block">
+        <h2>Humanized text</h2>
+        <pre id="humanized-text" class="humanized-text"></pre>
+      </div>
+    </section>
+
+    <script type="module" src="sidebar.js"></script>
+  </body>
+</html>

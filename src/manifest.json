@@ -3,15 +3,18 @@
   "name": "Humanize Copy/Paste",
   "version": "1.3.0",
   "description": "Copy selected text with subtle cleanup of common AI writing tells",
-  "permissions": ["contextMenus", "storage", "scripting"],
+  "permissions": ["contextMenus", "storage", "scripting", "sidePanel"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "options_page": "options.html",
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
   "action": {
-    "default_title": "Humanize Copy/Paste Settings",
+    "default_title": "Humanize Copy/Paste",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

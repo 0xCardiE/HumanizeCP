@@ -1,6 +1,7 @@
 import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
 
 const MENU_ID = "humanize-copy";
+const LATEST_COPY_KEY = "latestCopy";
 
 let cachedSettings = { ...DEFAULT_SETTINGS };
 
@@ -48,31 +49,52 @@ function copyViaPage(tabId, text) {
 function copyText(tab, text) {
   const restricted = isRestrictedPage(tab.url);
 
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {
-      if (restricted) {
-        console.error(
-          "Humanize Copy: cannot run on browser pages (chrome://, etc.). Use a normal website."
-        );
-        return;
-      }
-      copyViaPage(tab.id, text).catch((err) => {
-        console.error("Humanize Copy failed:", err);
+  const write = () => {
+    if (navigator.clipboard?.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => {
+        if (restricted) {
+          throw new Error("restricted-page");
+        }
+        return copyViaPage(tab.id, text);
       });
-    });
-    return;
-  }
+    }
 
-  if (restricted) {
-    console.error(
-      "Humanize Copy: cannot run on browser pages (chrome://, etc.). Use a normal website."
-    );
-    return;
-  }
+    if (restricted) {
+      return Promise.reject(new Error("restricted-page"));
+    }
 
-  copyViaPage(tab.id, text).catch((err) => {
+    return copyViaPage(tab.id, text);
+  };
+
+  return write().catch((err) => {
+    if (err?.message === "restricted-page") {
+      console.error(
+        "Humanize Copy: cannot run on browser pages (chrome://, etc.). Use a normal website."
+      );
+      return false;
+    }
     console.error("Humanize Copy failed:", err);
+    return false;
   });
+}
+
+function saveLatestCopy({ original, humanized, copied, tabId }) {
+  const entry = {
+    original,
+    humanized,
+    copied,
+    timestamp: Date.now(),
+  };
+
+  chrome.storage.local.set({ [LATEST_COPY_KEY]: entry });
+
+  if (tabId) {
+    chrome.sidePanel.open({ tabId }).catch(() => {});
+  }
+}
+
+function configureSidePanel() {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -81,22 +103,30 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Copy && Humanize",
     contexts: ["selection"],
   });
+  configureSidePanel();
   refreshSettings();
 });
 
-chrome.runtime.onStartup.addListener(refreshSettings);
+chrome.runtime.onStartup.addListener(() => {
+  configureSidePanel();
+  refreshSettings();
+});
 
 chrome.storage.onChanged.addListener((_, area) => {
   if (area === "sync") refreshSettings();
 });
 
-chrome.action.onClicked.addListener(() => {
-  chrome.runtime.openOptionsPage();
-});
-
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
 
-  const cleaned = humanize(info.selectionText || "", cachedSettings);
-  copyText(tab, cleaned);
+  const original = info.selectionText || "";
+  const humanized = humanize(original, cachedSettings);
+  const copied = await copyText(tab, humanized);
+
+  saveLatestCopy({
+    original,
+    humanized,
+    copied: copied !== false,
+    tabId: tab.id,
+  });
 });
