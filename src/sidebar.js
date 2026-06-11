@@ -1,5 +1,6 @@
 import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
 import { formatForPaste } from "./richFormat.js";
+import { pasteTextFromClipboard } from "./htmlToMarkdown.js";
 import {
   diffWords,
   groupChanges,
@@ -29,6 +30,8 @@ let lastTimestamp = null;
 let revertedChanges = new Set();
 let cachedSettings = { ...DEFAULT_SETTINGS };
 let isProcessingPaste = false;
+let copyFeedbackTimer = null;
+const COPY_BTN_LABEL = "Copy for Socials";
 
 function getSettings() {
   return new Promise((resolve) => {
@@ -193,17 +196,42 @@ async function toggleChange(changeId) {
   await copyToClipboard(displayText);
 }
 
+function resetCopyButtonFeedback() {
+  plainTextBtn.textContent = COPY_BTN_LABEL;
+  plainTextBtn.classList.remove("plain-text-btn--copied", "plain-text-btn--failed");
+  clipboardStatus.classList.remove("status-chip--pulse");
+}
+
+function showCopyFeedback(copied) {
+  resetCopyButtonFeedback();
+
+  if (copied) {
+    plainTextBtn.textContent = "Copied!";
+    plainTextBtn.classList.add("plain-text-btn--copied");
+    clipboardStatus.textContent = "Copied for Socials";
+  } else {
+    plainTextBtn.textContent = "Copy failed";
+    plainTextBtn.classList.add("plain-text-btn--failed");
+    clipboardStatus.textContent = "Copy failed";
+  }
+
+  clipboardStatus.classList.add("status-chip--pulse");
+
+  clearTimeout(copyFeedbackTimer);
+  copyFeedbackTimer = setTimeout(resetCopyButtonFeedback, 2000);
+}
+
 async function copyPlainText() {
   if (!currentEntry) return;
 
   const base = getHumanizedBaseText(currentEntry);
   if (!base.trim()) return;
 
+  plainTextBtn.classList.add("plain-text-btn--active");
   const { plain, html } = formatForPaste(base);
   const copied = await copyForPaste(plain, html);
-  clipboardStatus.textContent = copied
-    ? "Copied for Twitter"
-    : "Copy failed";
+  plainTextBtn.classList.remove("plain-text-btn--active");
+  showCopyFeedback(copied);
 }
 
 function loadLatestCopy() {
@@ -216,10 +244,10 @@ openSettings.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
-pasteInput.addEventListener("paste", () => {
-  requestAnimationFrame(() => {
-    processPastedText(pasteInput.value);
-  });
+pasteInput.addEventListener("paste", (event) => {
+  event.preventDefault();
+  const text = pasteTextFromClipboard(event.clipboardData);
+  processPastedText(text);
 });
 
 pasteInput.addEventListener("keydown", (event) => {

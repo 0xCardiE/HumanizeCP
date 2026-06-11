@@ -218,16 +218,60 @@ h1 {
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.plain-text-btn:hover {
+.plain-text-btn:hover:not(:disabled) {
   color: var(--text);
   border-color: var(--chip-text);
+}
+
+.plain-text-btn:active:not(:disabled),
+.plain-text-btn--active:not(:disabled) {
+  transform: scale(0.96);
+  background: var(--accent-soft);
+}
+
+.plain-text-btn--copied {
+  color: var(--chip-text);
+  border-color: var(--chip-text);
+  background: var(--chip-bg);
+}
+
+.plain-text-btn--failed {
+  color: var(--del-text);
+  border-color: var(--del-text);
+  background: var(--del-bg);
+}
+
+.plain-text-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .plain-text-btn:focus-visible {
   outline: 2px solid var(--chip-text);
   outline-offset: 1px;
+}
+
+.status-chip--pulse {
+  animation: chip-pulse 0.35s ease;
+}
+
+@keyframes chip-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .diff-view,
