@@ -1,4 +1,4 @@
-# Humanize Copy
+# Humanize Copy/Paste
 
 Chrome extension v1.1 — right-click → **Copy & Humanize** → paste cleaned text.
 

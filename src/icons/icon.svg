@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" aria-hidden="true">
+  <rect width="128" height="128" rx="28" fill="#142820"/>
+  <rect x="5" y="5" width="118" height="118" rx="23" stroke="#2F6B4F" stroke-width="2" opacity="0.55"/>
+  <!-- Humanist H: rounded stems and crossbar for a clear, friendly mark -->
+  <rect x="32" y="28" width="16" height="72" rx="8" fill="#A8E0BC"/>
+  <rect x="80" y="28" width="16" height="72" rx="8" fill="#A8E0BC"/>
+  <rect x="32" y="54" width="64" height="16" rx="8" fill="#7BC995"/>
+</svg>

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Humanize Copy",
+  "name": "Humanize Copy/Paste",
   "version": "1.1.0",
   "description": "Copy selected text with subtle cleanup of common AI writing tells",
   "permissions": ["contextMenus", "storage", "scripting"],
@@ -11,7 +11,7 @@
   },
   "options_page": "options.html",
   "action": {
-    "default_title": "Humanize Copy Settings",
+    "default_title": "Humanize Copy/Paste Settings",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
