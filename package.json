@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "icons": "node scripts/generate-icons.js",
+    "screenshots": "node scripts/format-store-screenshots.js",
+    "promo": "node scripts/generate-promo-tiles.js",
     "export": "node scripts/export.js",
     "watch": "node scripts/watch-export.js"
   },
