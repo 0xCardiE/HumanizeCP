@@ -1,4 +1,5 @@
 export const DEFAULT_SETTINGS = {
+  keepStructure: true,
   emDashes: true,
   doublePunctuation: true,
   fillerPhrases: true,
@@ -13,6 +14,10 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const RULE_GROUPS = [
+  {
+    name: "Formatting",
+    rules: ["keepStructure"],
+  },
   {
     name: "Symbols & punctuation",
     rules: ["emDashes", "doublePunctuation"],
@@ -37,6 +42,11 @@ export const RULE_GROUPS = [
 export const RULE_ORDER = RULE_GROUPS.flatMap((group) => group.rules);
 
 export const RULE_LABELS = {
+  keepStructure: {
+    name: "Keep structure",
+    description:
+      "Preserve line breaks, blank lines, and spacing within each line. When off, whitespace is normalized into flowing text.",
+  },
   emDashes: {
     name: "Em dashes",
     description:
@@ -123,11 +133,15 @@ function pickForm(forms) {
   return (match, suffix = "") => matchCase(forms[suffix.toLowerCase()], match);
 }
 
-function normalizeText(text) {
-  return text
+function normalizeText(text, { preserveStructure = false } = {}) {
+  let result = text
     .replace(/\u00a0/g, " ")
     .replace(/[\u200b-\u200d\ufeff]/g, "")
-    .replace(/\r\n/g, "\n")
+    .replace(/\r\n/g, "\n");
+
+  if (preserveStructure) return result;
+
+  return result
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n[ \t]+/g, "\n")
     .replace(/[ \t]+/g, " ")
@@ -455,7 +469,14 @@ function applyAcademicFormal(text) {
   return applyReplacements(text, ACADEMIC_FORMAL_RULES);
 }
 
-function trimWhitespace(text) {
+function trimWhitespace(text, { preserveStructure = false } = {}) {
+  if (preserveStructure) {
+    return text
+      .split("\n")
+      .map((line) => line.replace(/[ \t]+([.,!?;:])/g, "$1"))
+      .join("\n");
+  }
+
   return text
     .split("\n")
     .map((line) => line.trim())
@@ -480,14 +501,29 @@ const RULE_APPLIERS = {
   academicFormal: applyAcademicFormal,
 };
 
+function humanizeChunk(text, settings, preserveStructure) {
+  let result = normalizeText(text, { preserveStructure });
+  for (const key of RULE_ORDER) {
+    if (settings[key] === false || !RULE_APPLIERS[key]) continue;
+    result = RULE_APPLIERS[key](result);
+  }
+  return trimWhitespace(fixSentenceCase(result), { preserveStructure });
+}
+
 export function humanize(text, settings = DEFAULT_SETTINGS) {
   if (!text) return "";
 
-  let result = normalizeText(text);
-  for (const key of RULE_ORDER) {
-    if (settings[key] !== false) {
-      result = RULE_APPLIERS[key](result);
-    }
+  const preserveStructure = settings.keepStructure !== false;
+
+  if (!preserveStructure) {
+    return humanizeChunk(text, settings, false);
   }
-  return trimWhitespace(fixSentenceCase(result));
+
+  return text
+    .split("\n")
+    .map((line) => {
+      if (!line.trim()) return line;
+      return humanizeChunk(line, settings, true);
+    })
+    .join("\n");
 }

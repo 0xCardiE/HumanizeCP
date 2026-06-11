@@ -97,6 +97,21 @@ function configureSidePanel() {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 }
 
+// info.selectionText flattens all whitespace to single spaces, so line breaks
+// are lost. Read the real selection from the page to keep the structure.
+async function getSelectionFromPage(tab) {
+  if (isRestrictedPage(tab.url)) return null;
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => window.getSelection()?.toString() ?? "",
+    });
+    return result?.result || null;
+  } catch {
+    return null;
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: MENU_ID,
@@ -119,7 +134,7 @@ chrome.storage.onChanged.addListener((_, area) => {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
 
-  const original = info.selectionText || "";
+  const original = (await getSelectionFromPage(tab)) ?? info.selectionText ?? "";
   const humanized = humanize(original, cachedSettings);
   const copied = await copyText(tab, humanized);
 
