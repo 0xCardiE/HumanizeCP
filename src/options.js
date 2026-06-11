@@ -4,11 +4,6 @@ const form = document.getElementById("settings-form");
 const rulesList = document.getElementById("rules-list");
 const previewInput = document.getElementById("preview-input");
 const previewOutput = document.getElementById("preview-output");
-const permissionStatus = document.getElementById("permission-status");
-const grantAccessBtn = document.getElementById("grant-access");
-
-const SITE_ACCESS = { origins: ["<all_urls>"] };
-
 function readFormSettings() {
   const settings = { ...DEFAULT_SETTINGS };
   for (const group of RULE_GROUPS) {
@@ -59,24 +54,10 @@ function runPreview() {
   previewOutput.textContent = humanize(previewInput.value, readFormSettings());
 }
 
-function updatePermissionUI() {
-  chrome.permissions.contains(SITE_ACCESS, (granted) => {
-    grantAccessBtn.hidden = granted;
-    permissionStatus.textContent = granted
-      ? "Works on all websites."
-      : "Allow site access once to use on any page.";
-  });
-}
-
-grantAccessBtn.addEventListener("click", () => {
-  chrome.permissions.request(SITE_ACCESS, updatePermissionUI);
-});
-
 chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
   const settings = { ...DEFAULT_SETTINGS, ...stored };
   renderRules(settings);
   runPreview();
-  updatePermissionUI();
 });
 
 form.addEventListener("change", () => {

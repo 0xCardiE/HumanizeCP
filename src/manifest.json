@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Humanize Copy/Paste",
-  "version": "1.1.0",
+  "version": "1.2.3",
   "description": "Copy selected text with subtle cleanup of common AI writing tells",
   "permissions": ["contextMenus", "storage", "scripting"],
-  "optional_host_permissions": ["<all_urls>"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

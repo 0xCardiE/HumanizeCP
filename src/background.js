@@ -1,10 +1,8 @@
 import { humanize, DEFAULT_SETTINGS } from "./humanize.js";
 
 const MENU_ID = "humanize-copy";
-const SITE_ACCESS = { origins: ["<all_urls>"] };
 
 let cachedSettings = { ...DEFAULT_SETTINGS };
-let hasSiteAccess = false;
 
 function refreshSettings() {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (stored) => {
@@ -12,10 +10,14 @@ function refreshSettings() {
   });
 }
 
-function refreshSiteAccess() {
-  chrome.permissions.contains(SITE_ACCESS, (granted) => {
-    hasSiteAccess = granted;
-  });
+function isRestrictedPage(url) {
+  return (
+    !url ||
+    url.startsWith("chrome://") ||
+    url.startsWith("chrome-extension://") ||
+    url.startsWith("edge://") ||
+    url.startsWith("about:")
+  );
 }
 
 function copyViaPage(tabId, text) {
@@ -23,25 +25,54 @@ function copyViaPage(tabId, text) {
     target: { tabId },
     world: "MAIN",
     func: (value) => {
-      const el = document.createElement("textarea");
-      el.value = value;
-      el.setAttribute("readonly", "");
-      el.style.cssText = "position:fixed;top:0;left:0;opacity:0";
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
+      const fallback = () => {
+        const el = document.createElement("textarea");
+        el.value = value;
+        el.setAttribute("readonly", "");
+        el.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      };
+
+      if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(value).catch(fallback);
+      }
+      return fallback();
     },
     args: [text],
   });
 }
 
-function copyText(tabId, text) {
+function copyText(tab, text) {
+  const restricted = isRestrictedPage(tab.url);
+
   if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => copyViaPage(tabId, text));
+    navigator.clipboard.writeText(text).catch(() => {
+      if (restricted) {
+        console.error(
+          "Humanize Copy: cannot run on browser pages (chrome://, etc.). Use a normal website."
+        );
+        return;
+      }
+      copyViaPage(tab.id, text).catch((err) => {
+        console.error("Humanize Copy failed:", err);
+      });
+    });
     return;
   }
-  copyViaPage(tabId, text);
+
+  if (restricted) {
+    console.error(
+      "Humanize Copy: cannot run on browser pages (chrome://, etc.). Use a normal website."
+    );
+    return;
+  }
+
+  copyViaPage(tab.id, text).catch((err) => {
+    console.error("Humanize Copy failed:", err);
+  });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -51,20 +82,13 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["selection"],
   });
   refreshSettings();
-  refreshSiteAccess();
 });
 
-chrome.runtime.onStartup.addListener(() => {
-  refreshSettings();
-  refreshSiteAccess();
-});
+chrome.runtime.onStartup.addListener(refreshSettings);
 
 chrome.storage.onChanged.addListener((_, area) => {
   if (area === "sync") refreshSettings();
 });
-
-chrome.permissions.onAdded.addListener(refreshSiteAccess);
-chrome.permissions.onRemoved.addListener(refreshSiteAccess);
 
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
@@ -74,14 +98,5 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
 
   const cleaned = humanize(info.selectionText || "", cachedSettings);
-
-  if (!hasSiteAccess) {
-    chrome.permissions.request(SITE_ACCESS, (granted) => {
-      hasSiteAccess = granted;
-      if (granted) copyText(tab.id, cleaned);
-    });
-    return;
-  }
-
-  copyText(tab.id, cleaned);
+  copyText(tab, cleaned);
 });

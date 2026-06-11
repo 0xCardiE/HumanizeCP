@@ -59,6 +59,11 @@ header p {
   color: var(--muted);
 }
 
+.permission-note {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
 section {
   margin-top: 2rem;
 }
