@@ -13,7 +13,7 @@ npm run export
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked** and select the **`extension/`** folder
-4. Allow site access when prompted (once)
+4. Reload the extension after updates (`npm run export`, then click reload on `chrome://extensions`)
 
 ## Development
 

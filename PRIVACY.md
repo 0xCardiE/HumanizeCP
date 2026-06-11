@@ -35,7 +35,7 @@ The extension requests permissions needed to work on pages where you select or p
 | `storage` | Saves your rule settings and recent copy session locally |
 | `scripting` | Reads selected text and writes to the clipboard on the active page |
 | `sidePanel` | Shows the review panel with diffs and paste-to-clean |
-| Host access (`<all_urls>`) | Lets copy and cleanup work on websites you visit |
+| `activeTab` | Grants temporary access to the current tab when you use Copy & Humanize or click the extension |
 
 These permissions are used only to provide the extension’s features. They are not used to track browsing history or collect data for advertising.
 

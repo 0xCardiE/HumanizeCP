@@ -15,7 +15,7 @@ const STORAGE_KEY = "latestCopy";
 
 const emptyState = document.getElementById("empty-state");
 const copyPanel = document.getElementById("copy-panel");
-const clipboardStatus = document.getElementById("clipboard-status");
+const clipboardNote = document.getElementById("clipboard-note");
 const copyTime = document.getElementById("copy-time");
 const changeStats = document.getElementById("change-stats");
 const diffView = document.getElementById("diff-view");
@@ -32,6 +32,29 @@ let cachedSettings = { ...DEFAULT_SETTINGS };
 let isProcessingPaste = false;
 let copyFeedbackTimer = null;
 const COPY_BTN_LABEL = "Copy for Socials";
+
+function setClipboardNote(copied, { updated = false, social = false } = {}) {
+  clipboardNote.classList.remove(
+    "clipboard-note--muted",
+    "clipboard-note--error",
+    "status-chip--pulse"
+  );
+
+  if (social) {
+    clipboardNote.textContent = "Copied for Socials — paste into Gmail, Docs, or social apps.";
+    return;
+  }
+
+  if (copied === false) {
+    clipboardNote.textContent = "Could not copy to clipboard. Select and copy the text above manually.";
+    clipboardNote.classList.add("clipboard-note--error");
+    return;
+  }
+
+  clipboardNote.textContent = updated
+    ? "Updated on your clipboard — ready to paste anywhere."
+    : "On your clipboard — ready to paste anywhere.";
+}
 
 function getSettings() {
   return new Promise((resolve) => {
@@ -123,7 +146,7 @@ function renderCopy(entry) {
   if (!changed) {
     changeStats.textContent = "No changes — text was already clean.";
     diffView.textContent = displayText;
-    clipboardStatus.textContent = copied === false ? "Not copied" : "On clipboard";
+    setClipboardNote(copied);
     return;
   }
 
@@ -146,11 +169,7 @@ function renderCopy(entry) {
     revertedChanges
   );
 
-  if (revertedChanges.size > 0) {
-    clipboardStatus.textContent = copied === false ? "Not copied" : "Updated on clipboard";
-  } else {
-    clipboardStatus.textContent = copied === false ? "Not copied" : "On clipboard";
-  }
+  setClipboardNote(copied, { updated: revertedChanges.size > 0 });
 }
 
 async function processPastedText(text) {
@@ -199,7 +218,11 @@ async function toggleChange(changeId) {
 function resetCopyButtonFeedback() {
   plainTextBtn.textContent = COPY_BTN_LABEL;
   plainTextBtn.classList.remove("plain-text-btn--copied", "plain-text-btn--failed");
-  clipboardStatus.classList.remove("status-chip--pulse");
+  if (currentEntry) {
+    setClipboardNote(currentEntry.copied !== false, {
+      updated: revertedChanges.size > 0,
+    });
+  }
 }
 
 function showCopyFeedback(copied) {
@@ -208,14 +231,14 @@ function showCopyFeedback(copied) {
   if (copied) {
     plainTextBtn.textContent = "Copied!";
     plainTextBtn.classList.add("plain-text-btn--copied");
-    clipboardStatus.textContent = "Copied for Socials";
+    setClipboardNote(true, { social: true });
   } else {
     plainTextBtn.textContent = "Copy failed";
     plainTextBtn.classList.add("plain-text-btn--failed");
-    clipboardStatus.textContent = "Copy failed";
+    setClipboardNote(false);
   }
 
-  clipboardStatus.classList.add("status-chip--pulse");
+  clipboardNote.classList.add("status-chip--pulse");
 
   clearTimeout(copyFeedbackTimer);
   copyFeedbackTimer = setTimeout(resetCopyButtonFeedback, 2000);

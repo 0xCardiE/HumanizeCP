@@ -36,7 +36,6 @@
 
     <section id="copy-panel" class="copy-panel" hidden>
       <div class="status-bar">
-        <span id="clipboard-status" class="status-chip">On clipboard</span>
         <time id="copy-time" class="copy-time"></time>
       </div>
 
@@ -47,11 +46,6 @@
         <p class="diff-hint">Click a highlighted word or phrase to revert it.</p>
         <div id="diff-view" class="diff-view" aria-live="polite"></div>
       </div>
-
-      <details class="panel-block original-block">
-        <summary>Original text</summary>
-        <pre id="original-text" class="original-text"></pre>
-      </details>
 
       <div class="panel-block humanized-block">
         <div class="panel-block-header">
@@ -66,7 +60,13 @@
           </button>
         </div>
         <pre id="humanized-text" class="humanized-text"></pre>
+        <p id="clipboard-note" class="clipboard-note" aria-live="polite"></p>
       </div>
+
+      <details class="panel-block original-block">
+        <summary>Original text</summary>
+        <pre id="original-text" class="original-text"></pre>
+      </details>
     </section>
 
     <script type="module" src="sidebar.js"></script>
