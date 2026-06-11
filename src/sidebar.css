@@ -165,9 +165,44 @@ h1 {
   font: inherit;
 }
 
+.diff-hint {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .diff-view {
   background: var(--accent-soft);
   border-color: transparent;
+}
+
+.diff-change {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: box-shadow 0.15s ease;
+}
+
+.diff-change:hover {
+  box-shadow: 0 0 0 2px var(--border);
+}
+
+.diff-change:focus-visible {
+  outline: 2px solid var(--chip-text);
+  outline-offset: 1px;
+}
+
+.diff-change-reverted {
+  color: var(--text);
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 2px;
 }
 
 .diff-del {

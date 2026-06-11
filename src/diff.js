@@ -75,6 +75,107 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
+export function groupChanges(segments) {
+  const groups = [];
+  let index = 0;
+
+  while (index < segments.length) {
+    if (segments[index].type === "equal") {
+      index += 1;
+      continue;
+    }
+
+    const group = { deleteText: "", insertText: "" };
+    while (index < segments.length && segments[index].type !== "equal") {
+      if (segments[index].type === "delete") {
+        group.deleteText += segments[index].text;
+      } else {
+        group.insertText += segments[index].text;
+      }
+      index += 1;
+    }
+    groups.push(group);
+  }
+
+  return groups;
+}
+
+export function isWordChange(group) {
+  return group.deleteText.trim().length > 0 || group.insertText.trim().length > 0;
+}
+
+export function buildDisplayText(segments, groups, revertedChanges) {
+  let output = "";
+  let groupIndex = 0;
+  let segmentIndex = 0;
+
+  while (segmentIndex < segments.length) {
+    if (segments[segmentIndex].type === "equal") {
+      output += segments[segmentIndex].text;
+      segmentIndex += 1;
+      continue;
+    }
+
+    const group = groups[groupIndex];
+    const reverted =
+      isWordChange(group) && revertedChanges.has(groupIndex);
+    output += reverted ? group.deleteText : group.insertText;
+
+    while (
+      segmentIndex < segments.length &&
+      segments[segmentIndex].type !== "equal"
+    ) {
+      segmentIndex += 1;
+    }
+    groupIndex += 1;
+  }
+
+  return output;
+}
+
+export function renderInteractiveDiffHtml(segments, groups, revertedChanges) {
+  let html = "";
+  let groupIndex = 0;
+  let segmentIndex = 0;
+
+  while (segmentIndex < segments.length) {
+    if (segments[segmentIndex].type === "equal") {
+      html += escapeHtml(segments[segmentIndex].text);
+      segmentIndex += 1;
+      continue;
+    }
+
+    const group = groups[groupIndex];
+    const isWord = isWordChange(group);
+    const reverted = isWord && revertedChanges.has(groupIndex);
+
+    if (!isWord) {
+      html += escapeHtml(group.insertText);
+    } else if (reverted) {
+      html += `<button type="button" class="diff-change diff-change-reverted" data-change-id="${groupIndex}" title="Click to re-apply change">${escapeHtml(group.deleteText)}</button>`;
+    } else {
+      html += `<button type="button" class="diff-change" data-change-id="${groupIndex}" title="Click to revert change">`;
+      if (group.deleteText) {
+        html += `<span class="diff-del">${escapeHtml(group.deleteText)}</span>`;
+      }
+      if (group.insertText) {
+        html += `<span class="diff-ins">${escapeHtml(group.insertText)}</span>`;
+      }
+      html += "</button>";
+    }
+
+    while (
+      segmentIndex < segments.length &&
+      segments[segmentIndex].type !== "equal"
+    ) {
+      segmentIndex += 1;
+    }
+    groupIndex += 1;
+  }
+
+  return html;
+}
+
 export function renderDiffHtml(segments) {
   return segments
     .map((segment) => {
@@ -90,10 +191,10 @@ export function renderDiffHtml(segments) {
     .join("");
 }
 
-export function countChanges(segments) {
-  return segments.filter(
-    (segment) =>
-      segment.type !== "equal" && segment.text.trim().length > 0
+export function countWordChanges(groups, revertedChanges = new Set()) {
+  return groups.filter(
+    (group, index) =>
+      isWordChange(group) && !revertedChanges.has(index)
   ).length;
 }
 

@@ -131,6 +131,23 @@ chrome.storage.onChanged.addListener((_, area) => {
   if (area === "sync") refreshSettings();
 });
 
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type !== "copyText") return;
+
+  const write = () => {
+    if (navigator.clipboard?.writeText) {
+      return navigator.clipboard.writeText(message.text);
+    }
+    return Promise.reject(new Error("clipboard-unavailable"));
+  };
+
+  write()
+    .then(() => sendResponse({ ok: true }))
+    .catch(() => sendResponse({ ok: false }));
+
+  return true;
+});
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
 

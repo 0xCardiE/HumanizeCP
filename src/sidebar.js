@@ -1,8 +1,11 @@
 import {
   diffWords,
-  renderDiffHtml,
-  countChanges,
+  groupChanges,
+  buildDisplayText,
+  renderInteractiveDiffHtml,
+  countWordChanges,
   hasChanges,
+  isWordChange,
 } from "./diff.js";
 
 const STORAGE_KEY = "latestCopy";
@@ -17,6 +20,10 @@ const originalText = document.getElementById("original-text");
 const humanizedText = document.getElementById("humanized-text");
 const openSettings = document.getElementById("open-settings");
 
+let currentEntry = null;
+let lastTimestamp = null;
+let revertedChanges = new Set();
+
 function formatTime(timestamp) {
   return new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
@@ -24,35 +31,115 @@ function formatTime(timestamp) {
   }).format(new Date(timestamp));
 }
 
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "copyText",
+        text,
+      });
+      return response?.ok === true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function resetRevertsIfNewCopy(entry) {
+  if (entry?.timestamp !== lastTimestamp) {
+    revertedChanges = new Set();
+    lastTimestamp = entry?.timestamp ?? null;
+  }
+}
+
 function renderCopy(entry) {
   if (!entry?.original && !entry?.humanized) {
+    currentEntry = null;
     emptyState.hidden = false;
     copyPanel.hidden = true;
     return;
   }
 
+  resetRevertsIfNewCopy(entry);
+  currentEntry = entry;
+
   emptyState.hidden = true;
   copyPanel.hidden = false;
 
   const { original, humanized, timestamp, copied } = entry;
-  const segments = diffWords(original, humanized);
-  const changes = countChanges(segments);
+  const baseSegments = diffWords(original, humanized);
+  const changeGroups = groupChanges(baseSegments);
+  const displayText = buildDisplayText(
+    baseSegments,
+    changeGroups,
+    revertedChanges
+  );
+  const remainingChanges = countWordChanges(changeGroups, revertedChanges);
   const changed = hasChanges(original, humanized);
 
   copyTime.textContent = formatTime(timestamp);
-  clipboardStatus.textContent = copied === false ? "Not copied" : "On clipboard";
-  clipboardStatus.hidden = false;
+  originalText.textContent = original;
+  humanizedText.textContent = displayText;
 
   if (!changed) {
     changeStats.textContent = "No changes — text was already clean.";
-    diffView.textContent = humanized;
-  } else {
-    changeStats.textContent = `${changes} change${changes === 1 ? "" : "s"} · ${original.length} → ${humanized.length} characters`;
-    diffView.innerHTML = renderDiffHtml(segments);
+    diffView.textContent = displayText;
+    clipboardStatus.textContent = copied === false ? "Not copied" : "On clipboard";
+    return;
   }
 
-  originalText.textContent = original;
-  humanizedText.textContent = humanized;
+  if (remainingChanges === 0) {
+    changeStats.textContent = "All word changes reverted.";
+  } else {
+    const revertedCount = changeGroups.filter(
+      (group, index) => isWordChange(group) && revertedChanges.has(index)
+    ).length;
+    const stats = `${remainingChanges} change${remainingChanges === 1 ? "" : "s"}`;
+    changeStats.textContent =
+      revertedCount > 0
+        ? `${stats} remaining · ${revertedCount} reverted`
+        : `${stats} · click highlighted words to revert`;
+  }
+
+  diffView.innerHTML = renderInteractiveDiffHtml(
+    baseSegments,
+    changeGroups,
+    revertedChanges
+  );
+
+  if (revertedChanges.size > 0) {
+    clipboardStatus.textContent = copied === false ? "Not copied" : "Updated on clipboard";
+  } else {
+    clipboardStatus.textContent = copied === false ? "Not copied" : "On clipboard";
+  }
+}
+
+async function toggleChange(changeId) {
+  if (!currentEntry) return;
+
+  const parsedId = Number(changeId);
+  if (Number.isNaN(parsedId)) return;
+
+  if (revertedChanges.has(parsedId)) {
+    revertedChanges.delete(parsedId);
+  } else {
+    revertedChanges.add(parsedId);
+  }
+
+  const { original, humanized } = currentEntry;
+  const baseSegments = diffWords(original, humanized);
+  const changeGroups = groupChanges(baseSegments);
+  const displayText = buildDisplayText(
+    baseSegments,
+    changeGroups,
+    revertedChanges
+  );
+
+  renderCopy({ ...currentEntry, copied: true });
+  await copyToClipboard(displayText);
 }
 
 function loadLatestCopy() {
@@ -63,6 +150,12 @@ function loadLatestCopy() {
 
 openSettings.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
+});
+
+diffView.addEventListener("click", (event) => {
+  const button = event.target.closest(".diff-change");
+  if (!button) return;
+  toggleChange(button.dataset.changeId);
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
