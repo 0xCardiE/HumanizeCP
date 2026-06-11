@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Humanize Copy — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Humanize Copy</h1>
+        <p>
+          Right-click selected text and choose <strong>Copy &amp; Humanize</strong>
+          to copy with subtle cleanup of common AI writing tells.
+        </p>
+      </header>
+
+      <section class="preview-section">
+        <h2>Preview</h2>
+        <textarea id="preview-input" rows="4" spellcheck="false">Many people believe AI will replace humans completely—but the reality is far more nuanced. But here's the thing: we need to delve into this landscape and leverage the real unlock.</textarea>
+        <button id="preview-btn" type="button">Run preview</button>
+        <output id="preview-output" aria-live="polite"></output>
+      </section>
+
+      <section>
+        <div class="section-header">
+          <h2>Cleanup rules</h2>
+          <div class="bulk-actions">
+            <button id="enable-all" type="button">Enable all</button>
+            <button id="disable-all" type="button">Disable all</button>
+          </div>
+        </div>
+        <form id="settings-form">
+          <ul id="rules-list"></ul>
+        </form>
+      </section>
+
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "humanize-cp",
+  "version": "1.0.0",
+  "description": "Chrome extension to copy selected text with AI tell-sign cleanup",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "watch": "node scripts/build.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

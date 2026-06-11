@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Humanize Copy",
+  "version": "1.0.0",
+  "description": "Copy selected text with subtle cleanup of common AI writing tells",
+  "permissions": ["contextMenus", "storage", "scripting", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Humanize Copy Settings",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
