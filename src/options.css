@@ -70,7 +70,7 @@ output {
 
 textarea {
   resize: vertical;
-  min-height: 10rem;
+  min-height: 14rem;
 }
 
 output {

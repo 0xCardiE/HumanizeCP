@@ -1,8 +1,8 @@
 # Humanize Copy
 
-Chrome extension: right-click → **Copy & Humanize** → paste cleaned text.
+Chrome extension v1.1 — right-click → **Copy & Humanize** → paste cleaned text.
 
-Based on [How to spot when writing is AI](https://huntingthemuse.net/library/how-to-tell-if-writing-is-ai).
+Based on [How to spot when writing is AI](https://huntingthemuse.net/library/how-to-tell-if-writing-is-ai) and [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
 
 ## Install
 
@@ -15,7 +15,19 @@ npm run export
 3. Click **Load unpacked** and select the **`extension/`** folder
 4. Allow site access when prompted (once)
 
-After code changes, run `npm run export` again and reload the extension in Chrome.
+## Development
+
+After any change to `src/`, export before reloading in Chrome:
+
+```bash
+npm run export
+```
+
+Or auto-export on save:
+
+```bash
+npm run watch
+```
 
 ## Use
 

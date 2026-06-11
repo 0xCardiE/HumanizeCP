@@ -2,6 +2,7 @@
   "name": "humanize-cp",
   "private": true,
   "scripts": {
-    "export": "node scripts/export.js"
+    "export": "node scripts/export.js",
+    "watch": "node scripts/watch-export.js"
   }
 }
