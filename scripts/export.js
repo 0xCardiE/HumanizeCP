@@ -15,6 +15,23 @@ function copyDir(from, to) {
   }
 }
 
+function buildSelectionMarkdownInjected() {
+  const corePath = path.join(src, "htmlToMarkdownCore.js");
+  const core = fs
+    .readFileSync(corePath, "utf8")
+    .replace(/export async function /g, "async function ")
+    .replace(/export function /g, "function ");
+  const injected = `${core}
+async function getSelectionMarkdown() {
+  return getSelectionMarkdownFromDom();
+}
+`;
+
+  fs.writeFileSync(path.join(src, "selectionMarkdownInjected.js"), injected);
+  fs.writeFileSync(path.join(out, "selectionMarkdownInjected.js"), injected);
+}
+
 fs.rmSync(out, { recursive: true, force: true });
 copyDir(src, out);
+buildSelectionMarkdownInjected();
 console.log("Exported extension to extension/");

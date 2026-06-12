@@ -180,7 +180,8 @@ async function processPastedText(text) {
   try {
     const settings = await getSettings();
     const humanized = humanize(original, settings);
-    const copied = await copyToClipboard(humanized);
+    const { plain, html } = formatForPaste(humanized);
+    const copied = await copyForPaste(plain, html);
     const entry = {
       original,
       humanized,
@@ -212,7 +213,8 @@ async function toggleChange(changeId) {
   const displayText = getHumanizedBaseText(currentEntry);
 
   renderCopy({ ...currentEntry, copied: true });
-  await copyToClipboard(displayText);
+  const { plain, html } = formatForPaste(displayText);
+  await copyForPaste(plain, html);
 }
 
 function resetCopyButtonFeedback() {
